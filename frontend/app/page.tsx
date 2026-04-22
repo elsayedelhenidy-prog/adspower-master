@@ -6,16 +6,23 @@ import { Monitor, Play, RefreshCcw, Database, ShieldCheck, Terminal, AlertCircle
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
+interface RDPNode {
+    hostname?: string;
+    status?: string;
+    currentAccount?: string;
+    ip?: string;
+}
+
 export default function MasterDashboard() {
-    const [rdps, setRdps] = useState([]);
+    const [rdps, setRdps] = useState<RDPNode[]>([]);
     const [accountList, setAccountList] = useState("");
     const [stats, setStats] = useState({ totalAccounts: 0, used: 0 });
-    const [statusMsg, setStatusMsg] = useState({ type: 'info', text: 'Dashboard Ready' });
+    const [statusMsg, setStatusMsg] = useState<{type: string, text: string}>({ type: 'info', text: 'Dashboard Ready' });
 
     useEffect(() => {
         const socket = io(SOCKET_URL);
 
-        socket.on('update_rdp_list', (data) => {
+        socket.on('update_rdp_list', (data: RDPNode[]) => {
             setRdps(data);
         });
 
@@ -171,7 +178,7 @@ export default function MasterDashboard() {
                                 <tbody className="divide-y divide-white/5">
                                     {rdps.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="px-6 py-20 text-center text-slate-500 italic">
+                                            <td colSpan={5} className="px-6 py-20 text-center text-slate-500 italic">
                                                 No active RDP agents detected. Connect a bot to see it here.
                                             </td>
                                         </tr>
