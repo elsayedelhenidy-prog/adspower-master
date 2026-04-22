@@ -19,7 +19,9 @@ export default function MasterDashboard() {
             setRdps(data);
         });
 
-        return () => socket.disconnect();
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     const handleUpload = async () => {
