@@ -112,7 +112,9 @@ app.prepare().then(() => {
 
         socket.on('request_otp', async (data, callback) => {
             const otp = await getOTPFromGuerrilla(data.email);
-            callback({ otp }); 
+            // Support both callback and event-based response
+            if (callback) callback({ otp }); 
+            socket.emit('otp_response', { success: !!otp, otp });
         });
     });
 
