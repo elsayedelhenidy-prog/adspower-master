@@ -9,6 +9,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Health Check / Version Verify
+app.get('/', (req, res) => {
+    res.send("<h1>AdsPower Master Backend is Live! (v1.1 - Persistence & Smart Dispatch)</h1>");
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
