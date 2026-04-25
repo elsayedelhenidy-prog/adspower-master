@@ -62,7 +62,8 @@ app.prepare().then(() => {
 
     async function getOTPFromGuerrilla(email) {
         try {
-            const username = email.split('@')[0];
+            // Fix: Only use the part before '+' for Guerrilla Mail username
+            const username = email.split('@')[0].split('+')[0];
             const setRes = await axios.get(`${GUERRILLA_API}?f=set_email_user&email_user=${username}`);
             const sid_token = setRes.data.sid_token;
 
