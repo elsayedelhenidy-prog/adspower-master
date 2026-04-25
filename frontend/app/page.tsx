@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Monitor, Play, RefreshCcw, Database, ShieldCheck, Terminal, AlertCircle, Plus } from 'lucide-react';
+import clsx from 'clsx';
 
 const SOCKET_URL = ""; // Relative to the current domain
 
