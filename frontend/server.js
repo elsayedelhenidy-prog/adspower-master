@@ -115,8 +115,22 @@ app.prepare().then(() => {
         });
 
         socket.on('request_otp', async (data, callback) => {
-            const otp = await getOTPFromGuerrilla(data.email);
-            // Support both callback and event-based response
+            const { email } = data;
+            const hostname = Object.keys(rdps).find(h => rdps[h].socketId === socket.id);
+            
+            if (hostname) {
+                rdps[hostname].status = 'WAITING_OTP';
+                io.emit('update_rdp_list', Object.values(rdps));
+                console.log(`[Agent] Starting OTP search for ${email} on ${hostname}`);
+            }
+
+            const otp = await getOTPFromGuerrilla(email);
+            
+            if (hostname && rdps[hostname]) {
+                rdps[hostname].status = otp ? 'OTP_RECEIVED' : 'IDLE';
+                io.emit('update_rdp_list', Object.values(rdps));
+            }
+
             if (callback) callback({ otp }); 
             socket.emit('otp_response', { success: !!otp, otp });
         });
