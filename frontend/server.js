@@ -56,6 +56,36 @@ app.prepare().then(() => {
         res.json({ success: true, dispatched: dispatchedCount });
     });
 
+    // --- GUERRILLA MAIL HELPER ---
+    const GUERRILLA_API = "https://api.guerrillamail.com/ajax.php";
+    const axios = require('axios');
+
+    async function getOTPFromGuerrilla(email) {
+        try {
+            const username = email.split('@')[0];
+            const setRes = await axios.get(`${GUERRILLA_API}?f=set_email_user&email_user=${username}`);
+            const sid_token = setRes.data.sid_token;
+
+            for (let i = 0; i < 12; i++) { // Check for 1 minute
+                const msgRes = await axios.get(`${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid_token}`);
+                const messages = msgRes.data.list || [];
+                const otpMsg = messages.find(m => 
+                    m.mail_from.toLowerCase().includes('adspower') || 
+                    m.mail_subject.toLowerCase().includes('verification code')
+                );
+
+                if (otpMsg) {
+                    const fullRes = await axios.get(`${GUERRILLA_API}?f=fetch_email&email_id=${otpMsg.mail_id}&sid_token=${sid_token}`);
+                    const body = fullRes.data.mail_body;
+                    const match = body.match(/\b\d{6}\b/);
+                    if (match) return match[0];
+                }
+                await new Promise(r => setTimeout(r, 5000));
+            }
+        } catch (error) { console.error("[Guerrilla Error]", error.message); }
+        return null;
+    }
+
     // --- Socket.IO Logic ---
     io.on('connection', (socket) => {
         socket.on('register_rdp', (data) => {
@@ -81,8 +111,8 @@ app.prepare().then(() => {
         });
 
         socket.on('request_otp', async (data, callback) => {
-            // Placeholder logic for Guerrilla Mail (can be expanded)
-            callback({ otp: null }); 
+            const otp = await getOTPFromGuerrilla(data.email);
+            callback({ otp }); 
         });
     });
 
