@@ -18,7 +18,8 @@ const io = new Server(server, {
 });
 
 // --- DATA STORES (Later move to Supabase) ---
-let connectedRDPs = {}; // { socketId: { hostname, status, currentAccount } }
+// --- DATA STORES (Later move to Supabase) ---
+let rdps = {};          // { hostname: { hostname, status, currentAccount, ip, isOnline, socketId } }
 let accountPool = [];   // List of { email, password, recoveryEmail }
 
 // --- GUERRILLA MAIL HELPER ---
@@ -67,20 +68,29 @@ io.on('connection', (socket) => {
     console.log(`[RDP Connected] ID: ${socket.id}`);
 
     socket.on('register_rdp', (data) => {
-        connectedRDPs[socket.id] = {
+        // Update or Create RDP entry keyed by Hostname
+        rdps[data.hostname] = {
             hostname: data.hostname,
             status: 'IDLE',
             currentAccount: null,
-            ip: socket.handshake.address
+            ip: socket.handshake.address,
+            isOnline: true,
+            socketId: socket.id
         };
         console.log(`[RDP Registered] ${data.hostname} at ${socket.id}`);
-        io.emit('update_rdp_list', Object.values(connectedRDPs));
+        io.emit('update_rdp_list', Object.values(rdps));
     });
 
     socket.on('disconnect', () => {
         console.log(`[RDP Disconnected] ${socket.id}`);
-        delete connectedRDPs[socket.id];
-        io.emit('update_rdp_list', Object.values(connectedRDPs));
+        // Find RDP by socketId and set to Offline
+        const hostname = Object.keys(rdps).find(h => rdps[h].socketId === socket.id);
+        if (hostname) {
+            rdps[hostname].isOnline = false;
+            rdps[hostname].status = 'OFFLINE';
+            rdps[hostname].socketId = null;
+        }
+        io.emit('update_rdp_list', Object.values(rdps));
     });
 
     // Bot requests OTP
@@ -114,21 +124,29 @@ app.post('/api/accounts/upload', (req, res) => {
 
 // Trigger Login for all RDPs
 app.post('/api/commands/login-all', (req, res) => {
-    const clients = Object.keys(connectedRDPs);
-    console.log(`[Master Command] Login All triggered for ${clients.length} RDPs`);
+    // Only target RDPs that are ONLINE and IDLE
+    const targetHosts = Object.keys(rdps).filter(h => rdps[h].isOnline && rdps[h].status === 'IDLE');
+    
+    console.log(`[Master Command] Smart Dispatch triggered for ${targetHosts.length} IDLE RDPs`);
 
-    clients.forEach((socketId, index) => {
+    let dispatchedCount = 0;
+    targetHosts.forEach((hostname) => {
         if (accountPool.length > 0) {
-            const account = accountPool.shift(); // Take one account
-            connectedRDPs[socketId].status = 'LOGGING_IN';
-            connectedRDPs[socketId].currentAccount = account.email;
+            const account = accountPool.shift(); // Take one account from pool (Unique)
+            const socketId = rdps[hostname].socketId;
             
-            io.to(socketId).emit('CMD_LOGIN_NEW', account);
+            rdps[hostname].status = 'LOGGING_IN';
+            rdps[hostname].currentAccount = account.email;
+            
+            if (socketId) {
+                io.to(socketId).emit('CMD_LOGIN_NEW', account);
+                dispatchedCount++;
+            }
         }
     });
 
-    io.emit('update_rdp_list', Object.values(connectedRDPs));
-    res.json({ success: true });
+    io.emit('update_rdp_list', Object.values(rdps));
+    res.json({ success: true, dispatched: dispatchedCount });
 });
 
 const PORT = process.env.PORT || 3001;

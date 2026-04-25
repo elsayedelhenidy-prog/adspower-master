@@ -4,13 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Monitor, Play, RefreshCcw, Database, ShieldCheck, Terminal, AlertCircle, Plus } from 'lucide-react';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== 'undefined' ? window.location.origin.replace('3000', '3001') : "http://localhost:3001");
 
 interface RDPNode {
     hostname?: string;
     status?: string;
     currentAccount?: string;
     ip?: string;
+    isOnline?: boolean;
 }
 
 export default function MasterDashboard() {
@@ -196,11 +197,13 @@ export default function MasterDashboard() {
                                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                                                     rdp.status === 'IDLE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                                                     rdp.status === 'LOGGING_IN' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                                    rdp.status === 'OFFLINE' ? 'bg-slate-500/10 text-slate-500 border-slate-500/20' :
                                                     'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
                                                 }`}>
                                                     <span className={`w-1.5 h-1.5 rounded-full ${
                                                         rdp.status === 'IDLE' ? 'bg-emerald-500' :
                                                         rdp.status === 'LOGGING_IN' ? 'bg-amber-500' :
+                                                        rdp.status === 'OFFLINE' ? 'bg-slate-500' :
                                                         'bg-indigo-500'
                                                     }`}></span>
                                                     {rdp.status}
