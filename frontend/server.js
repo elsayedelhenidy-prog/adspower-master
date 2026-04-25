@@ -62,22 +62,28 @@ app.prepare().then(() => {
 
     async function getOTPFromGuerrilla(email) {
         try {
-            // Fix: Only use the part before '+' for Guerrilla Mail username
             const username = email.split('@')[0].split('+')[0];
             const setRes = await axios.get(`${GUERRILLA_API}?f=set_email_user&email_user=${username}`);
             const sid_token = setRes.data.sid_token;
 
-            for (let i = 0; i < 12; i++) { // Check for 1 minute
+            // 1. Get current Max ID to ignore old emails
+            const initialRes = await axios.get(`${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid_token}`);
+            const initialMessages = initialRes.data.list || [];
+            const maxIdAtStart = initialMessages.length > 0 ? Math.max(...initialMessages.map(m => parseInt(m.mail_id))) : 0;
+            
+            console.log(`[Agent] Monitoring ${username} for NEW emails (Max ID at start: ${maxIdAtStart})`);
+
+            for (let i = 0; i < 24; i++) { // Check for 2 minutes
                 const msgRes = await axios.get(`${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid_token}`);
                 const messages = msgRes.data.list || [];
-                // Sort by ID descending to ensure we get the latest one first
-                const adspowerMessages = messages.filter(m => 
-                    m.mail_from.toLowerCase().includes('adspower') || 
-                    m.mail_subject.toLowerCase().includes('verification code')
+                
+                // Filter: Must be AdsPower AND have ID > maxIdAtStart
+                const freshMessages = messages.filter(m => 
+                    (m.mail_from.toLowerCase().includes('adspower') || m.mail_subject.toLowerCase().includes('verification code')) &&
+                    parseInt(m.mail_id) > maxIdAtStart
                 ).sort((a, b) => parseInt(b.mail_id) - parseInt(a.mail_id));
 
-                const otpMsg = adspowerMessages[0];
-
+                const otpMsg = freshMessages[0];
                 if (otpMsg) {
                     const fullRes = await axios.get(`${GUERRILLA_API}?f=fetch_email&email_id=${otpMsg.mail_id}&sid_token=${sid_token}`);
                     const body = fullRes.data.mail_body;
