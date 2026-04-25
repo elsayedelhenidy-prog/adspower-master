@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Monitor, Play, RefreshCcw, Database, ShieldCheck, Terminal, AlertCircle, Plus } from 'lucide-react';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://adspower-master-production.up.railway.app";
+const SOCKET_URL = ""; // Relative to the current domain
 
 interface RDPNode {
     hostname?: string;
