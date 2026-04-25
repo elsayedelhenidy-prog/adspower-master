@@ -201,6 +201,7 @@ export default function MasterDashboard() {
                                                 rdp.status === 'LOGGING_IN' && "bg-amber-500/10 text-amber-400 border border-amber-500/20",
                                                 rdp.status === 'WAITING_OTP' && "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 animate-pulse",
                                                 rdp.status === 'OTP_RECEIVED' && "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+                                                rdp.status === 'LOGIN_SUCCESS' && "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
                                                 rdp.status === 'OFFLINE' && "bg-slate-500/10 text-slate-400 border border-slate-500/20"
                                             )}>
                                                 <div className={clsx(
@@ -209,12 +210,14 @@ export default function MasterDashboard() {
                                                     rdp.status === 'LOGGING_IN' && "bg-amber-400 animate-pulse",
                                                     rdp.status === 'WAITING_OTP' && "bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]",
                                                     rdp.status === 'OTP_RECEIVED' && "bg-blue-400",
+                                                    rdp.status === 'LOGIN_SUCCESS' && "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]",
                                                     rdp.status === 'OFFLINE' && "bg-slate-400"
                                                 )} />
                                                 {rdp.status === 'IDLE' ? 'IDLE' :
                                                  rdp.status === 'LOGGING_IN' ? 'LOGGING IN' :
                                                  rdp.status === 'WAITING_OTP' ? 'WAITING OTP' :
-                                                 rdp.status === 'OTP_RECEIVED' ? 'OTP READY' : 'OFFLINE'}
+                                                 rdp.status === 'OTP_RECEIVED' ? 'OTP READY' :
+                                                 rdp.status === 'LOGIN_SUCCESS' ? 'SUCCESSFUL' : 'OFFLINE'}
                                             </span>
                                             </td>
                                             <td className="px-6 py-5">

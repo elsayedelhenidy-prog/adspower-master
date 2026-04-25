@@ -110,6 +110,15 @@ app.prepare().then(() => {
             io.emit('update_rdp_list', Object.values(rdps));
         });
 
+        socket.on('rdp_status_update', (data) => {
+            const hostname = Object.keys(rdps).find(h => rdps[h].socketId === socket.id);
+            if (hostname) {
+                rdps[hostname].status = data.status;
+                io.emit('update_rdp_list', Object.values(rdps));
+                console.log(`[Status] ${hostname} updated to ${data.status}`);
+            }
+        });
+
         socket.on('disconnect', () => {
             const hostname = Object.keys(rdps).find(h => rdps[h].socketId === socket.id);
             if (hostname) {
