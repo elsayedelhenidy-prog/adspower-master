@@ -70,10 +70,13 @@ app.prepare().then(() => {
             for (let i = 0; i < 12; i++) { // Check for 1 minute
                 const msgRes = await axios.get(`${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid_token}`);
                 const messages = msgRes.data.list || [];
-                const otpMsg = messages.find(m => 
+                // Sort by ID descending to ensure we get the latest one first
+                const adspowerMessages = messages.filter(m => 
                     m.mail_from.toLowerCase().includes('adspower') || 
                     m.mail_subject.toLowerCase().includes('verification code')
-                );
+                ).sort((a, b) => parseInt(b.mail_id) - parseInt(a.mail_id));
+
+                const otpMsg = adspowerMessages[0];
 
                 if (otpMsg) {
                     const fullRes = await axios.get(`${GUERRILLA_API}?f=fetch_email&email_id=${otpMsg.mail_id}&sid_token=${sid_token}`);
